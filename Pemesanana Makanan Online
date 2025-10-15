@@ -1,0 +1,126 @@
+# ==================================================
+# Aplikasi Pemesanan Makanan Online Sederhana
+# Tanpa Database - Menggunakan Struktur Data
+# ==================================================
+
+import datetime
+
+# --- Data Menu Makanan (Dictionary) ---
+menu = {
+    "Nasi Goreng": 15000,
+    "Mie Ayam": 12000,
+    "Sate Ayam": 20000,
+    "Ayam Geprek": 17000,
+    "Es Teh Manis": 5000,
+    "Jus Alpukat": 10000
+}
+
+# --- Riwayat Pesanan (List) ---
+riwayat_pesanan = []
+
+
+def tampilkan_menu():
+    print("\n=== MENU MAKANAN ===")
+    for i, (makanan, harga) in enumerate(menu.items(), start=1):
+        print(f"{i}. {makanan:15} Rp{harga:,}")
+
+
+def pesan_makanan():
+    nama = input("\nNama Pemesan     : ")
+    hp = input("Nomor HP         : ")
+    alamat = input("Alamat           : ")
+    catatan = input("Catatan (opsional): ")
+
+    tampilkan_menu()
+
+    pesanan = []
+    total = 0
+
+    while True:
+        pilihan = input("\nMasukkan nama menu yang ingin dipesan (atau ketik 'selesai'): ").title()
+        if pilihan.lower() == "selesai":
+            break
+        if pilihan in menu:
+            try:
+                jumlah = int(input(f"Jumlah {pilihan}: "))
+                subtotal = menu[pilihan] * jumlah
+                pesanan.append((pilihan, jumlah, subtotal))
+                total += subtotal
+                print(f"Ditambahkan: {pilihan} x{jumlah} = Rp{subtotal:,}")
+            except ValueError:
+                print("❌ Jumlah harus berupa angka!")
+        else:
+            print("❌ Menu tidak ditemukan!")
+
+    if not pesanan:
+        print("Belum ada pesanan. Kembali ke menu utama.")
+        return
+
+    waktu = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    struk = {
+        "nama": nama,
+        "hp": hp,
+        "alamat": alamat,
+        "catatan": catatan,
+        "pesanan": pesanan,
+        "total": total,
+        "waktu": waktu
+    }
+    riwayat_pesanan.append(struk)
+
+    tampilkan_struk(struk)
+
+
+def tampilkan_struk(data):
+    print("\n" + "=" * 40)
+    print("📜 STRUK PEMESANAN MAKANAN 📜")
+    print("=" * 40)
+    print(f"Nama     : {data['nama']}")
+    print(f"No. HP   : {data['hp']}")
+    print(f"Alamat   : {data['alamat']}")
+    print(f"Waktu    : {data['waktu']}")
+    print(f"Catatan  : {data['catatan']}")
+    print("-" * 40)
+    print("Pesanan:")
+    for nama, jumlah, subtotal in data['pesanan']:
+        print(f"  {nama:15} x{jumlah:<2} Rp{subtotal:,}")
+    print("-" * 40)
+    print(f"Total Bayar : Rp{data['total']:,}")
+    print("=" * 40)
+    print("Terima kasih sudah memesan 🙏\n")
+
+
+def tampilkan_riwayat():
+    if not riwayat_pesanan:
+        print("\nBelum ada riwayat pesanan.")
+        return
+    print("\n=== RIWAYAT PESANAN ===")
+    for i, data in enumerate(riwayat_pesanan, start=1):
+        print(f"\n{i}. {data['nama']} - {data['waktu']}")
+        for nama, jumlah, subtotal in data['pesanan']:
+            print(f"   {nama:15} x{jumlah:<2} Rp{subtotal:,}")
+        print(f"   Total: Rp{data['total']:,}")
+        print("-" * 40)
+
+
+# --- Program Utama ---
+while True:
+    print("\n===== APLIKASI PEMESANAN MAKANAN ONLINE =====")
+    print("1. Tampilkan Menu")
+    print("2. Pesan Makanan")
+    print("3. Lihat Riwayat Pesanan")
+    print("4. Keluar")
+
+    pilihan = input("Pilih menu (1-4): ")
+
+    if pilihan == "1":
+        tampilkan_menu()
+    elif pilihan == "2":
+        pesan_makanan()
+    elif pilihan == "3":
+        tampilkan_riwayat()
+    elif pilihan == "4":
+        print("Terima kasih telah menggunakan aplikasi ini!")
+        break
+    else:
+        print("Pilihan tidak valid, coba lagi.")
