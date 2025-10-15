@@ -1,126 +1,215 @@
-# ==================================================
-# Aplikasi Pemesanan Makanan Online Sederhana
-# Tanpa Database - Menggunakan Struktur Data
-# ==================================================
+<?php
+session_start();
 
-import datetime
+// --- Daftar Menu ---
+$menu = [
+    "Nasi Goreng" => 20000,
+    "Mie Goreng" => 18000,
+    "Ayam Geprek" => 22000,
+    "Es Teh" => 5000,
+    "Es Jeruk" => 7000,
+];
 
-# --- Data Menu Makanan (Dictionary) ---
-menu = {
-    "Nasi Goreng": 15000,
-    "Mie Ayam": 12000,
-    "Sate Ayam": 20000,
-    "Ayam Geprek": 17000,
-    "Es Teh Manis": 5000,
-    "Jus Alpukat": 10000
+// --- Proses Form ---
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $nama = $_POST['nama'];
+    $nohp = $_POST['nohp'];
+    $alamat = $_POST['alamat'];
+    $catatan = $_POST['catatan'];
+    $pesanan = $_POST['pesanan'];
+    $jumlah = $_POST['jumlah'];
+
+    $total = 0;
+    $rincian = [];
+
+    foreach ($pesanan as $index => $item) {
+        if (!empty($item) && $jumlah[$index] > 0) {
+            $harga = $menu[$item];
+            $subtotal = $harga * $jumlah[$index];
+            $total += $subtotal;
+            $rincian[] = [
+                'item' => $item,
+                'harga' => $harga,
+                'jumlah' => $jumlah[$index],
+                'subtotal' => $subtotal
+            ];
+        }
+    }
+
+    $data_pesanan = [
+        'nama' => $nama,
+        'nohp' => $nohp,
+        'alamat' => $alamat,
+        'catatan' => $catatan,
+        'rincian' => $rincian,
+        'total' => $total,
+        'waktu' => date("d-m-Y H:i:s")
+    ];
+
+    // Simpan ke session
+    $_SESSION['riwayat'][] = $data_pesanan;
+
+    // Tampilkan struk
+    echo "<div class='struk'>
+        <h2>Struk Pemesanan</h2>
+        <p><strong>Nama:</strong> $nama</p>
+        <p><strong>No. HP:</strong> $nohp</p>
+        <p><strong>Alamat:</strong> $alamat</p>
+        <p><strong>Catatan:</strong> $catatan</p>
+        <table>
+            <tr><th>Menu</th><th>Harga</th><th>Qty</th><th>Subtotal</th></tr>";
+    foreach ($rincian as $r) {
+        echo "<tr>
+            <td>{$r['item']}</td>
+            <td>Rp " . number_format($r['harga'], 0, ',', '.') . "</td>
+            <td>{$r['jumlah']}</td>
+            <td>Rp " . number_format($r['subtotal'], 0, ',', '.') . "</td>
+        </tr>";
+    }
+    echo "<tr><td colspan='3'><strong>Total</strong></td><td><strong>Rp " . number_format($total, 0, ',', '.') . "</strong></td></tr>";
+    echo "</table>
+        <p><em>Waktu Pesan: {$data_pesanan['waktu']}</em></p>
+        <a href='index.php' class='btn'>Pesan Lagi</a>
+        <a href='?riwayat' class='btn'>Lihat Riwayat</a>
+    </div>";
+    exit;
 }
 
-# --- Riwayat Pesanan (List) ---
-riwayat_pesanan = []
-
-
-def tampilkan_menu():
-    print("\n=== MENU MAKANAN ===")
-    for i, (makanan, harga) in enumerate(menu.items(), start=1):
-        print(f"{i}. {makanan:15} Rp{harga:,}")
-
-
-def pesan_makanan():
-    nama = input("\nNama Pemesan     : ")
-    hp = input("Nomor HP         : ")
-    alamat = input("Alamat           : ")
-    catatan = input("Catatan (opsional): ")
-
-    tampilkan_menu()
-
-    pesanan = []
-    total = 0
-
-    while True:
-        pilihan = input("\nMasukkan nama menu yang ingin dipesan (atau ketik 'selesai'): ").title()
-        if pilihan.lower() == "selesai":
-            break
-        if pilihan in menu:
-            try:
-                jumlah = int(input(f"Jumlah {pilihan}: "))
-                subtotal = menu[pilihan] * jumlah
-                pesanan.append((pilihan, jumlah, subtotal))
-                total += subtotal
-                print(f"Ditambahkan: {pilihan} x{jumlah} = Rp{subtotal:,}")
-            except ValueError:
-                print("❌ Jumlah harus berupa angka!")
-        else:
-            print("❌ Menu tidak ditemukan!")
-
-    if not pesanan:
-        print("Belum ada pesanan. Kembali ke menu utama.")
-        return
-
-    waktu = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    struk = {
-        "nama": nama,
-        "hp": hp,
-        "alamat": alamat,
-        "catatan": catatan,
-        "pesanan": pesanan,
-        "total": total,
-        "waktu": waktu
+// --- Riwayat Pesanan ---
+if (isset($_GET['riwayat'])) {
+    echo "<div class='riwayat'><h2>Riwayat Pesanan</h2>";
+    if (!empty($_SESSION['riwayat'])) {
+        foreach ($_SESSION['riwayat'] as $p) {
+            echo "<div class='card'>
+                <h3>{$p['nama']} ({$p['nohp']})</h3>
+                <p><strong>Alamat:</strong> {$p['alamat']}</p>
+                <p><strong>Catatan:</strong> {$p['catatan']}</p>
+                <ul>";
+            foreach ($p['rincian'] as $r) {
+                echo "<li>{$r['item']} x{$r['jumlah']} - Rp " . number_format($r['subtotal'], 0, ',', '.') . "</li>";
+            }
+            echo "</ul>
+                <p><strong>Total: Rp " . number_format($p['total'], 0, ',', '.') . "</strong></p>
+                <p><em>{$p['waktu']}</em></p>
+            </div>";
+        }
+    } else {
+        echo "<p>Belum ada riwayat pesanan.</p>";
     }
-    riwayat_pesanan.append(struk)
+    echo "<a href='index.php' class='btn'>Kembali ke Form</a></div>";
+    exit;
+}
+?>
 
-    tampilkan_struk(struk)
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Form Pemesanan Makanan Online</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f1f1f1;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    width: 450px;
+    background: white;
+    margin: 50px auto;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+}
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+input, textarea, select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+button, .btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin-top: 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+button:hover, .btn:hover {
+    background-color: #218838;
+}
+.struk, .riwayat {
+    width: 600px;
+    margin: 50px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #ccc;
+}
+.struk table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+.struk table, th, td {
+    border: 1px solid #ddd;
+}
+th, td {
+    padding: 8px;
+    text-align: center;
+}
+.card {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h2>Form Pemesanan Makanan</h2>
+    <form method="post">
+        <label>Nama</label>
+        <input type="text" name="nama" required>
 
+        <label>Nomor HP</label>
+        <input type="text" name="nohp" required>
 
-def tampilkan_struk(data):
-    print("\n" + "=" * 40)
-    print("📜 STRUK PEMESANAN MAKANAN 📜")
-    print("=" * 40)
-    print(f"Nama     : {data['nama']}")
-    print(f"No. HP   : {data['hp']}")
-    print(f"Alamat   : {data['alamat']}")
-    print(f"Waktu    : {data['waktu']}")
-    print(f"Catatan  : {data['catatan']}")
-    print("-" * 40)
-    print("Pesanan:")
-    for nama, jumlah, subtotal in data['pesanan']:
-        print(f"  {nama:15} x{jumlah:<2} Rp{subtotal:,}")
-    print("-" * 40)
-    print(f"Total Bayar : Rp{data['total']:,}")
-    print("=" * 40)
-    print("Terima kasih sudah memesan 🙏\n")
+        <label>Alamat</label>
+        <textarea name="alamat" required></textarea>
 
+        <label>Pesanan</label>
+        <?php for ($i=0; $i<3; $i++): ?>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+            <select name="pesanan[]">
+                <option value="">-- Pilih Menu --</option>
+                <?php foreach ($menu as $m => $h): ?>
+                    <option value="<?= $m ?>"><?= $m ?> - Rp <?= number_format($h,0,',','.') ?></option>
+                <?php endforeach; ?>
+            </select>
+            <input type="number" name="jumlah[]" min="1" placeholder="Qty" style="width:70px;">
+        </div>
+        <?php endfor; ?>
 
-def tampilkan_riwayat():
-    if not riwayat_pesanan:
-        print("\nBelum ada riwayat pesanan.")
-        return
-    print("\n=== RIWAYAT PESANAN ===")
-    for i, data in enumerate(riwayat_pesanan, start=1):
-        print(f"\n{i}. {data['nama']} - {data['waktu']}")
-        for nama, jumlah, subtotal in data['pesanan']:
-            print(f"   {nama:15} x{jumlah:<2} Rp{subtotal:,}")
-        print(f"   Total: Rp{data['total']:,}")
-        print("-" * 40)
+        <label>Catatan</label>
+        <textarea name="catatan"></textarea>
 
-
-# --- Program Utama ---
-while True:
-    print("\n===== APLIKASI PEMESANAN MAKANAN ONLINE =====")
-    print("1. Tampilkan Menu")
-    print("2. Pesan Makanan")
-    print("3. Lihat Riwayat Pesanan")
-    print("4. Keluar")
-
-    pilihan = input("Pilih menu (1-4): ")
-
-    if pilihan == "1":
-        tampilkan_menu()
-    elif pilihan == "2":
-        pesan_makanan()
-    elif pilihan == "3":
-        tampilkan_riwayat()
-    elif pilihan == "4":
-        print("Terima kasih telah menggunakan aplikasi ini!")
-        break
-    else:
-        print("Pilihan tidak valid, coba lagi.")
+        <button type="submit">Kirim Pesanan</button>
+        <a href="?riwayat" class="btn" style="background:#007bff;">Lihat Riwayat</a>
+    </form>
+</div>
+</body>
+</html>
